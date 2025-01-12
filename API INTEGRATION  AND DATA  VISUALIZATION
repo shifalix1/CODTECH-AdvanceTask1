@@ -1,0 +1,60 @@
+import requests
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# Fetch data from OpenWeatherMap API
+API_KEY = "your_openweathermap_api_key"
+CITY = "London"
+URL = f"http://api.openweathermap.org/data/2.5/forecast?q={CITY}&appid={API_KEY}&units=metric"
+
+try:
+    response = requests.get(URL)
+    response.raise_for_status()
+    weather_data = response.json()
+except requests.exceptions.RequestException as e:
+    print(f"Error fetching data: {e}")
+    exit()
+
+# Extract and process data
+dates = []
+temperatures = []
+humidities = []
+
+for entry in weather_data["list"]:
+    dates.append(entry["dt_txt"])
+    temperatures.append(entry["main"]["temp"])
+    humidities.append(entry["main"]["humidity"])
+
+# Create a DataFrame
+data = pd.DataFrame({
+    "DateTime": dates,
+    "Temperature (°C)": temperatures,
+    "Humidity (%)": humidities
+})
+data["DateTime"] = pd.to_datetime(data["DateTime"])
+
+# Set the Seaborn style
+sns.set(style="whitegrid")
+
+# Visualization Dashboard
+fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+# Temperature Plot
+sns.lineplot(ax=axes[0], x="DateTime", y="Temperature (°C)", data=data, color="orange")
+axes[0].set_title("Temperature Forecast", fontsize=16)
+axes[0].set_ylabel("Temperature (°C)", fontsize=12)
+axes[0].tick_params(axis="x", rotation=45)
+
+# Humidity Plot
+sns.lineplot(ax=axes[1], x="DateTime", y="Humidity (%)", data=data, color="blue")
+axes[1].set_title("Humidity Forecast", fontsize=16)
+axes[1].set_ylabel("Humidity (%)", fontsize=12)
+axes[1].tick_params(axis="x", rotation=45)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+
+# Save the plots
+fig.savefig("weather_dashboard.png")
